@@ -22,9 +22,10 @@ func (repo *UsersMemoryRepo) Add(
 	}
 
 	newUser := &User{
-		Id:      uuid.New(),
-		UserAdd: *userAdd,
-		Created: time.Now().String(),
+		Id:       uuid.New(),
+		Username: username,
+		Password: userAdd.Password,
+		Created:  time.Now().String(),
 	}
 	repo.Users[username] = newUser
 

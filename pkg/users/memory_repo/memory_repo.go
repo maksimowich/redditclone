@@ -11,6 +11,7 @@ type (
 	UserAdd = users.UserAdd
 
 	UserAlreadyExistsError           = users.UserAlreadyExistsError
+	UserNotFoundError                = users.UserNotFoundError
 	InvalidUsernameOrPasswordtsError = users.InvalidUsernameOrPasswordtsError
 )
 
