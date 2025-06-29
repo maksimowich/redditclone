@@ -5,8 +5,8 @@ import "github.com/google/uuid"
 type User struct {
 	Id       uuid.UUID `json:"id"`
 	Username string    `json:"username"`
-	Password string
-	Created  string
+	Password string    `json:"-"`
+	Created  string    `json:"-"`
 }
 
 type UserAdd struct {
