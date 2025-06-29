@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/maksimowich/redditclone/pkg/handlers"
+	"github.com/maksimowich/redditclone/pkg/handlers/middleware"
+	utils "github.com/maksimowich/redditclone/pkg/handlers/utils"
 	"github.com/maksimowich/redditclone/pkg/jwt"
-	"github.com/maksimowich/redditclone/pkg/middleware"
 	"github.com/maksimowich/redditclone/pkg/users"
 )
 
@@ -23,7 +23,7 @@ func (h *UsersHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	registerRequestBody := &RegisterRequestBody{}
 
 	if err := middleware.ValidateRequest(r, registerRequestBody); err != nil {
-		handlers.HandleError(w, http.StatusBadRequest, err)
+		utils.HandleError(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -35,26 +35,26 @@ func (h *UsersHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	user, err := h.UsersRepo.Add(userAdd)
 	var UserAlreadyExistsErr *users.UserAlreadyExistsError
 	if err != nil && errors.As(err, &UserAlreadyExistsErr) {
-		handlers.HandleError(w, http.StatusConflict, err)
+		utils.HandleError(w, http.StatusConflict, err)
 		return
 	} else if err != nil {
-		handlers.HandleError(w, http.StatusInternalServerError, err)
+		utils.HandleError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	token, expires, err := jwt.GenerateJWT(user.Id, user.Username)
 	if err != nil {
-		handlers.HandleError(w, http.StatusInternalServerError, err)
+		utils.HandleError(w, http.StatusInternalServerError, err)
 		return
 	}
 	err = h.TokensRepo.Add(token, expires)
 	if err != nil {
-		handlers.HandleError(w, http.StatusInternalServerError, err)
+		utils.HandleError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	registerResponseBody := &RegisterResponseBody{
 		Token: token,
 	}
-	handlers.JSONResponse(w, http.StatusOK, registerResponseBody)
+	utils.JSONResponse(w, http.StatusOK, registerResponseBody)
 }

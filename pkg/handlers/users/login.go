@@ -3,9 +3,9 @@ package users_handlers
 import (
 	"net/http"
 
-	"github.com/maksimowich/redditclone/pkg/handlers"
+	"github.com/maksimowich/redditclone/pkg/handlers/middleware"
+	utils "github.com/maksimowich/redditclone/pkg/handlers/utils"
 	"github.com/maksimowich/redditclone/pkg/jwt"
-	"github.com/maksimowich/redditclone/pkg/middleware"
 )
 
 type LoginRequestBody struct {
@@ -21,7 +21,7 @@ func (h *UsersHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	loginRequestBody := &LoginRequestBody{}
 
 	if err := middleware.ValidateRequest(r, loginRequestBody); err != nil {
-		handlers.HandleError(w, http.StatusBadRequest, err)
+		utils.HandleError(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -30,23 +30,23 @@ func (h *UsersHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.UsersRepo.CheckPassword(username, password)
 	if err != nil {
-		handlers.HandleError(w, http.StatusUnauthorized, err)
+		utils.HandleError(w, http.StatusUnauthorized, err)
 		return
 	}
 
 	token, expires, err := jwt.GenerateJWT(user.Id, user.Username)
 	if err != nil {
-		handlers.HandleError(w, http.StatusInternalServerError, err)
+		utils.HandleError(w, http.StatusInternalServerError, err)
 		return
 	}
 	err = h.TokensRepo.Add(token, expires)
 	if err != nil {
-		handlers.HandleError(w, http.StatusBadRequest, err)
+		utils.HandleError(w, http.StatusBadRequest, err)
 		return
 	}
 
 	loginResponseBody := &LoginResponseBody{
 		Token: token,
 	}
-	handlers.JSONResponse(w, http.StatusOK, loginResponseBody)
+	utils.JSONResponse(w, http.StatusOK, loginResponseBody)
 }
