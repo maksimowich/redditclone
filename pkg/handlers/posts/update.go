@@ -3,17 +3,12 @@ package posts_handlers
 import (
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/maksimowich/redditclone/pkg/handlers/middleware"
 	utils "github.com/maksimowich/redditclone/pkg/handlers/utils"
 )
 
 type AddCommentRequestBody struct {
 	Text string `json:"text"`
-}
-
-type AddCommentResponseBody struct {
-	CommentId uuid.UUID `json:"text"`
 }
 
 func (h *PostsHandler) AddCommentHandler(w http.ResponseWriter, r *http.Request) {
@@ -41,12 +36,8 @@ func (h *PostsHandler) AddCommentHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	responseBody := &AddCommentResponseBody{newCommentId}
+	responseBody := &CommentIdResponseBody{newCommentId}
 	utils.JSONResponse(w, http.StatusOK, responseBody)
-}
-
-type DeleteCommentResponseBody struct {
-	CommentId uuid.UUID `json:"text"`
 }
 
 func (h *PostsHandler) DeleteCommentHandler(w http.ResponseWriter, r *http.Request) {
@@ -74,6 +65,52 @@ func (h *PostsHandler) DeleteCommentHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	responseBody := &DeleteCommentResponseBody{deletedCommentId}
+	responseBody := &CommentIdResponseBody{deletedCommentId}
+	utils.JSONResponse(w, http.StatusOK, responseBody)
+}
+
+func (h *PostsHandler) UpvoteHandler(w http.ResponseWriter, r *http.Request) {
+	postId, err := utils.GetPostIdFromQuery(r)
+	if err != nil {
+		utils.HandleErrorByType(w, err)
+		return
+	}
+
+	userId, err := middleware.GetUserIdFromContext(w, r)
+	if err != nil {
+		utils.HandleError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	upvotedPostId, err := h.PostsRepo.Upvote(postId, userId)
+	if err != nil {
+		utils.HandleErrorByType(w, err)
+		return
+	}
+
+	responseBody := &PostIdResponseBody{upvotedPostId}
+	utils.JSONResponse(w, http.StatusOK, responseBody)
+}
+
+func (h *PostsHandler) DownvoteHandler(w http.ResponseWriter, r *http.Request) {
+	postId, err := utils.GetPostIdFromQuery(r)
+	if err != nil {
+		utils.HandleErrorByType(w, err)
+		return
+	}
+
+	userId, err := middleware.GetUserIdFromContext(w, r)
+	if err != nil {
+		utils.HandleError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	upvotedPostId, err := h.PostsRepo.Downvote(postId, userId)
+	if err != nil {
+		utils.HandleErrorByType(w, err)
+		return
+	}
+
+	responseBody := &PostIdResponseBody{upvotedPostId}
 	utils.JSONResponse(w, http.StatusOK, responseBody)
 }
