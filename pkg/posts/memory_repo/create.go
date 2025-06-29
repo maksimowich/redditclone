@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/maksimowich/redditclone/pkg/comments"
 )
 
 func (repo *PostsMemoryRepo) Add(
@@ -31,7 +30,7 @@ func (repo *PostsMemoryRepo) Add(
 		Views:            0,
 		Votes:            []*Vote{},
 		UpvotePercentage: 100.0,
-		Comments:         []*comments.Comment{},
+		Comments:         []*Comment{},
 		Created:          time.Now().String(),
 	}
 

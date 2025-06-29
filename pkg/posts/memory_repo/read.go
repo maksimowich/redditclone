@@ -9,7 +9,7 @@ func (repo *PostsMemoryRepo) GetAll() ([]*Post, error) {
 	repo.Mu.Lock()
 	defer repo.Mu.Unlock()
 
-	posts := make([]*Post, len(repo.Posts))
+	posts := make([]*Post, 0, len(repo.Posts))
 	for _, post := range repo.Posts {
 		posts = append(posts, post)
 	}
@@ -17,7 +17,9 @@ func (repo *PostsMemoryRepo) GetAll() ([]*Post, error) {
 	return posts, nil
 }
 
-func (repo *PostsMemoryRepo) GetByCategory(category string) ([]*Post, error) {
+func (repo *PostsMemoryRepo) GetByCategory(
+	category string,
+) ([]*Post, error) {
 	repo.Mu.Lock()
 	defer repo.Mu.Unlock()
 
@@ -47,13 +49,15 @@ func (repo *PostsMemoryRepo) GetByUser(
 	return res, nil
 }
 
-func (repo *PostsMemoryRepo) GetById(id uuid.UUID) (*Post, error) {
+func (repo *PostsMemoryRepo) GetById(
+	postId uuid.UUID,
+) (*Post, error) {
 	repo.Mu.Lock()
 	defer repo.Mu.Unlock()
 
-	post, ok := repo.Posts[id]
+	post, ok := repo.Posts[postId]
 	if !ok {
-		return nil, &PostNotFoundError{PostID: id}
+		return nil, &PostNotFoundError{PostID: postId}
 	}
 
 	return post, nil

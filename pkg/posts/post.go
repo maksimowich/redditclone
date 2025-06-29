@@ -4,13 +4,19 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/maksimowich/redditclone/pkg/comments"
 	"github.com/maksimowich/redditclone/pkg/users"
 )
 
 type Vote struct {
 	User *users.User
 	Vote int8
+}
+
+type Comment struct {
+	Id      uuid.UUID   `json:"id"`
+	Body    string      `json:"body"`
+	Author  *users.User `json:"author"`
+	Created string      `json:"created"`
 }
 
 type Post struct {
@@ -28,7 +34,7 @@ type Post struct {
 	Votes            []*Vote
 	UpvotePercentage float64
 
-	Comments []*comments.Comment
+	Comments []*Comment
 
 	Created string
 }
@@ -55,19 +61,19 @@ type VoteResponse struct {
 }
 
 type PostResponse struct {
-	Id               uuid.UUID           `json:"id"`
-	Title            string              `json:"title"`
-	Type             string              `json:"type"`
-	Category         string              `json:"category"`
-	Text             string              `json:"text,omitempty"`
-	Url              string              `json:"url,omitempty"`
-	Author           *users.User         `json:"author"`
-	Score            uint32              `json:"score"`
-	Views            uint32              `json:"views"`
-	Votes            []*VoteResponse     `json:"votes"`
-	UpvotePercentage float64             `json:"upvotePercentage"`
-	Comments         []*comments.Comment `json:"comments"`
-	Created          string              `json:"created"`
+	Id               uuid.UUID       `json:"id"`
+	Title            string          `json:"title"`
+	Type             string          `json:"type"`
+	Category         string          `json:"category"`
+	Text             string          `json:"text,omitempty"`
+	Url              string          `json:"url,omitempty"`
+	Author           *users.User     `json:"author"`
+	Score            uint32          `json:"score"`
+	Views            uint32          `json:"views"`
+	Votes            []*VoteResponse `json:"votes"`
+	UpvotePercentage float64         `json:"upvotePercentage"`
+	Comments         []*Comment      `json:"comments"`
+	Created          string          `json:"created"`
 }
 
 func (p *Post) ToResponse() *PostResponse {
@@ -78,7 +84,6 @@ func (p *Post) ToResponse() *PostResponse {
 			Vote:   vote.Vote,
 		})
 	}
-
 	return &PostResponse{
 		Id:               p.Id,
 		Title:            p.Title,
@@ -104,14 +109,14 @@ type PostsRepoInterface interface {
 	GetAll() ([]*Post, error)
 	GetByCategory(category string) ([]*Post, error)
 	GetByUser(user *users.User) ([]*Post, error)
-	GetById(id uuid.UUID) (*Post, error)
+	GetById(postId uuid.UUID) (*Post, error)
 
 	// Update
-	AddComment(id uuid.UUID, comment string, commentAuthor *users.User) (*Post, error)
-	DeleteComment(id uuid.UUID, commentId uuid.UUID, deletingUser *users.User) (*Post, error)
-	Upvote(id uuid.UUID, user *users.User) (*Post, error)
-	Downvote(id uuid.UUID, user *users.User) (*Post, error)
+	AddComment(postId uuid.UUID, comment string, commentAuthor *users.User) (*Post, error)
+	DeleteComment(postId uuid.UUID, commentId uuid.UUID, deletingUser *users.User) (*Post, error)
+	Upvote(postId uuid.UUID, user *users.User) (*Post, error)
+	Downvote(postId uuid.UUID, user *users.User) (*Post, error)
 
 	// Delete
-	Delete(id uuid.UUID) error
+	Delete(postId uuid.UUID, userId uuid.UUID) (uuid.UUID, error)
 }

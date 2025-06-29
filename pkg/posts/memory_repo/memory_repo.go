@@ -9,10 +9,15 @@ import (
 )
 
 type (
-	Post              = posts.Post
-	PostAdd           = posts.PostAdd
-	PostNotFoundError = posts.PostNotFoundError
-	Vote              = posts.Vote
+	Vote    = posts.Vote
+	Comment = posts.Comment
+	Post    = posts.Post
+
+	PostAdd = posts.PostAdd
+
+	CommentNotFoundError   = posts.CommentNotFoundError
+	PostNotFoundError      = posts.PostNotFoundError
+	UserHasNotEnoughRights = posts.UserHasNotEnoughRights
 )
 
 type PostsMemoryRepo struct {

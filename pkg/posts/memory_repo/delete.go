@@ -4,19 +4,21 @@ import (
 	"github.com/google/uuid"
 )
 
-type ()
-
 func (repo *PostsMemoryRepo) Delete(
-	id uuid.UUID,
-) error {
+	postId uuid.UUID,
+	userId uuid.UUID,
+) (uuid.UUID, error) {
 	repo.Mu.Lock()
 	defer repo.Mu.Unlock()
 
-	_, ok := repo.Posts[id]
+	post, ok := repo.Posts[postId]
 	if !ok {
-		return &PostNotFoundError{PostID: id}
+		return uuid.Nil, &PostNotFoundError{PostID: postId}
+	}
+	if post.Author.Id != userId {
+		return uuid.Nil, &UserHasNotEnoughRights{UserId: userId}
 	}
 
-	delete(repo.Posts, id)
-	return nil
+	delete(repo.Posts, postId)
+	return post.Id, nil
 }

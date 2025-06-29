@@ -4,24 +4,23 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/maksimowich/redditclone/pkg/comments"
 	"github.com/maksimowich/redditclone/pkg/users"
 )
 
 func (repo *PostsMemoryRepo) AddComment(
-	id uuid.UUID,
+	postId uuid.UUID,
 	comment string,
 	commentAuthor *users.User,
 ) (*Post, error) {
 	repo.Mu.Lock()
 	defer repo.Mu.Unlock()
 
-	post, ok := repo.Posts[id]
+	post, ok := repo.Posts[postId]
 	if !ok {
-		return nil, &PostNotFoundError{PostID: id}
+		return nil, &PostNotFoundError{PostID: postId}
 	}
 
-	newComment := &comments.Comment{
+	newComment := &Comment{
 		Id:      uuid.New(),
 		Body:    comment,
 		Author:  commentAuthor,
@@ -33,16 +32,16 @@ func (repo *PostsMemoryRepo) AddComment(
 }
 
 func (repo *PostsMemoryRepo) DeleteComment(
-	id uuid.UUID,
+	postId uuid.UUID,
 	commentId uuid.UUID,
 	deletingUser *users.User,
 ) (*Post, error) {
 	repo.Mu.Lock()
 	defer repo.Mu.Unlock()
 
-	post, ok := repo.Posts[id]
+	post, ok := repo.Posts[postId]
 	if !ok {
-		return nil, &PostNotFoundError{PostID: id}
+		return nil, &PostNotFoundError{PostID: postId}
 	}
 
 	for i, comment := range post.Comments {
@@ -51,17 +50,12 @@ func (repo *PostsMemoryRepo) DeleteComment(
 				post.Comments = append(post.Comments[:i], post.Comments[i+1:]...)
 				return post, nil
 			} else {
-				return nil, &comments.NotEnoughRightsToDeleteComment{
-					CommentId: commentId,
-					UserId:    deletingUser.Id,
-				}
+				return nil, &UserHasNotEnoughRights{UserId: deletingUser.Id}
 			}
 		}
 	}
 
-	return nil, &comments.CommentNotFoundError{
-		CommentId: commentId,
-	}
+	return nil, &CommentNotFoundError{CommentId: commentId}
 }
 
 func calculateUpvotePercentage(post *Post) float64 {
@@ -103,16 +97,16 @@ func deleteUserVoteIfExists(
 }
 
 func (repo *PostsMemoryRepo) Upvote(
-	id uuid.UUID,
+	postId uuid.UUID,
 	user *users.User,
 ) (*Post, error) {
 	repo.Mu.Lock()
 	defer repo.Mu.Unlock()
 	var ok bool
 
-	post, ok := repo.Posts[id]
+	post, ok := repo.Posts[postId]
 	if !ok {
-		return nil, &PostNotFoundError{PostID: id}
+		return nil, &PostNotFoundError{PostID: postId}
 	}
 
 	existingVote, ok := getVoteByUser(post, user)
@@ -144,15 +138,15 @@ func (repo *PostsMemoryRepo) Upvote(
 }
 
 func (repo *PostsMemoryRepo) Downvote(
-	id uuid.UUID,
+	postId uuid.UUID,
 	user *users.User,
 ) (*Post, error) {
 	repo.Mu.Lock()
 	defer repo.Mu.Unlock()
 
-	post, ok := repo.Posts[id]
+	post, ok := repo.Posts[postId]
 	if !ok {
-		return nil, &PostNotFoundError{PostID: id}
+		return nil, &PostNotFoundError{PostID: postId}
 	}
 
 	existingVote, ok := getVoteByUser(post, user)
