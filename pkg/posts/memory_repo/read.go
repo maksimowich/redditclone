@@ -59,6 +59,7 @@ func (repo *PostsMemoryRepo) GetById(
 	if !ok {
 		return nil, &PostNotFoundError{PostID: postId}
 	}
+	post.Views += 1
 
 	return post, nil
 }

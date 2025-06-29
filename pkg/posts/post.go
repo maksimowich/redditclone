@@ -112,10 +112,12 @@ type PostsRepoInterface interface {
 	GetById(postId uuid.UUID) (*Post, error)
 
 	// Update
-	AddComment(postId uuid.UUID, comment string, commentAuthor *users.User) (*Post, error)
-	DeleteComment(postId uuid.UUID, commentId uuid.UUID, deletingUser *users.User) (*Post, error)
-	Upvote(postId uuid.UUID, user *users.User) (*Post, error)
-	Downvote(postId uuid.UUID, user *users.User) (*Post, error)
+	// Returns commentId and error
+	AddComment(postId uuid.UUID, comment string, commentAuthorId uuid.UUID) (uuid.UUID, error)
+	DeleteComment(postId uuid.UUID, commentId uuid.UUID, deletingUserId uuid.UUID) (uuid.UUID, error)
+	// Returns postId and error
+	Upvote(postId uuid.UUID, userId uuid.UUID) (uuid.UUID, error)
+	Downvote(postId uuid.UUID, userId uuid.UUID) (uuid.UUID, error)
 
 	// Delete
 	Delete(postId uuid.UUID, userId uuid.UUID) (uuid.UUID, error)

@@ -10,52 +10,58 @@ import (
 func (repo *PostsMemoryRepo) AddComment(
 	postId uuid.UUID,
 	comment string,
-	commentAuthor *users.User,
-) (*Post, error) {
+	commentAuthorId uuid.UUID,
+) (uuid.UUID, error) {
 	repo.Mu.Lock()
 	defer repo.Mu.Unlock()
 
 	post, ok := repo.Posts[postId]
 	if !ok {
-		return nil, &PostNotFoundError{PostID: postId}
+		return uuid.Nil, &PostNotFoundError{PostID: postId}
 	}
 
+	commentAuthor, err := repo.UsersRepo.GetById(commentAuthorId)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	newCommentId := uuid.New()
 	newComment := &Comment{
-		Id:      uuid.New(),
+		Id:      newCommentId,
 		Body:    comment,
 		Author:  commentAuthor,
 		Created: time.Now().String(),
 	}
 	post.Comments = append(post.Comments, newComment)
 
-	return post, nil
+	return newCommentId, nil
 }
 
 func (repo *PostsMemoryRepo) DeleteComment(
 	postId uuid.UUID,
 	commentId uuid.UUID,
-	deletingUser *users.User,
-) (*Post, error) {
+	deletingUserId uuid.UUID,
+) (uuid.UUID, error) {
 	repo.Mu.Lock()
 	defer repo.Mu.Unlock()
 
 	post, ok := repo.Posts[postId]
 	if !ok {
-		return nil, &PostNotFoundError{PostID: postId}
+		return uuid.Nil, &PostNotFoundError{PostID: postId}
 	}
 
 	for i, comment := range post.Comments {
 		if comment.Id == commentId {
-			if comment.Author == deletingUser {
+			if comment.Author.Id == deletingUserId {
 				post.Comments = append(post.Comments[:i], post.Comments[i+1:]...)
-				return post, nil
+				return comment.Id, nil
 			} else {
-				return nil, &UserHasNotEnoughRights{UserId: deletingUser.Id}
+				return uuid.Nil, &UserHasNotEnoughRights{UserId: deletingUserId}
 			}
 		}
 	}
 
-	return nil, &CommentNotFoundError{CommentId: commentId}
+	return uuid.Nil, &CommentNotFoundError{CommentId: commentId}
 }
 
 func calculateUpvotePercentage(post *Post) float64 {
@@ -98,15 +104,20 @@ func deleteUserVoteIfExists(
 
 func (repo *PostsMemoryRepo) Upvote(
 	postId uuid.UUID,
-	user *users.User,
-) (*Post, error) {
+	userId uuid.UUID,
+) (uuid.UUID, error) {
 	repo.Mu.Lock()
 	defer repo.Mu.Unlock()
 	var ok bool
 
 	post, ok := repo.Posts[postId]
 	if !ok {
-		return nil, &PostNotFoundError{PostID: postId}
+		return uuid.Nil, &PostNotFoundError{PostID: postId}
+	}
+
+	user, err := repo.UsersRepo.GetById(userId)
+	if err != nil {
+		return uuid.Nil, err
 	}
 
 	existingVote, ok := getVoteByUser(post, user)
@@ -118,12 +129,12 @@ func (repo *PostsMemoryRepo) Upvote(
 		post.Votes = append(post.Votes, newVote)
 		post.Score += 1
 		post.UpvotePercentage = calculateUpvotePercentage(post)
-		return post, nil
+		return post.Id, nil
 	} else if existingVote.Vote == 1 {
 		deleteUserVoteIfExists(post, user)
 		post.Score -= 1
 		post.UpvotePercentage = calculateUpvotePercentage(post)
-		return post, nil
+		return post.Id, nil
 	} else { // if existingVote.Vote == -1
 		newVote := &Vote{
 			User: user,
@@ -133,20 +144,25 @@ func (repo *PostsMemoryRepo) Upvote(
 		post.Votes = append(post.Votes, newVote)
 		post.Score += 2
 		post.UpvotePercentage = calculateUpvotePercentage(post)
-		return post, nil
+		return post.Id, nil
 	}
 }
 
 func (repo *PostsMemoryRepo) Downvote(
 	postId uuid.UUID,
-	user *users.User,
-) (*Post, error) {
+	userId uuid.UUID,
+) (uuid.UUID, error) {
 	repo.Mu.Lock()
 	defer repo.Mu.Unlock()
 
 	post, ok := repo.Posts[postId]
 	if !ok {
-		return nil, &PostNotFoundError{PostID: postId}
+		return uuid.Nil, &PostNotFoundError{PostID: postId}
+	}
+
+	user, err := repo.UsersRepo.GetById(userId)
+	if err != nil {
+		return uuid.Nil, err
 	}
 
 	existingVote, ok := getVoteByUser(post, user)
@@ -158,12 +174,12 @@ func (repo *PostsMemoryRepo) Downvote(
 		post.Votes = append(post.Votes, newVote)
 		post.Score -= 1
 		post.UpvotePercentage = calculateUpvotePercentage(post)
-		return post, nil
+		return post.Id, nil
 	} else if existingVote.Vote == -1 {
 		deleteUserVoteIfExists(post, user)
 		post.Score += 1
 		post.UpvotePercentage = calculateUpvotePercentage(post)
-		return post, nil
+		return post.Id, nil
 	} else { // if existingVote.Vote == 1
 		newVote := &Vote{
 			User: user,
@@ -173,6 +189,6 @@ func (repo *PostsMemoryRepo) Downvote(
 		post.Votes = append(post.Votes, newVote)
 		post.Score -= 2
 		post.UpvotePercentage = calculateUpvotePercentage(post)
-		return post, nil
+		return post.Id, nil
 	}
 }
